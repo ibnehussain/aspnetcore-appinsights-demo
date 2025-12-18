@@ -1,0 +1,101 @@
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - appinsightsdemo</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/appinsightsdemo.styles.css" asp-append-version="true" />
+    
+    <!-- Application Insights JavaScript SDK - Only load if connection string is available -->
+    @{
+        var aiConnectionString = Configuration.GetConnectionString("ApplicationInsights") ?? Configuration["ApplicationInsights:ConnectionString"];
+        var isAiConfigured = !string.IsNullOrWhiteSpace(aiConnectionString) && 
+                           !aiConnectionString.Contains("PLACEHOLDER") && 
+                           !aiConnectionString.Contains("YOUR_");
+    }
+    
+    @if (isAiConfigured)
+    {
+    <script type="text/javascript">
+    !function(T,l,y){var S=T.location,k="script",D="instrumentationKey",C="ingestionendpoint",I="disableExceptionTracking",E="ai.device.",b="toLowerCase",w="crossOrigin",N="POST",e="appInsightsSDK",t=y.name||"appInsights";(y.name||T[e])&&(T[e]=t);var n=T[t]||function(d){var g=!1,f=!1,m={initialize:!0,queue:[],sv:"5",version:2,config:d};function v(e,t){var n={},a="Browser";return n[E+"id"]=a[b](),n[E+"type"]=a,n["ai.operation.name"]=S&&S.pathname||"_unknown_",n["ai.internal.sdkVersion"]="javascript:snippet_"+(m.sv||m.version),{time:function(){var e=new Date;function t(e){var t=""+e;return 1===t.length&&(t="0"+t),t}return e.getUTCFullYear()+"-"+t(1+e.getUTCMonth())+"-"+t(e.getUTCDate())+"T"+t(e.getUTCHours())+":"+t(e.getUTCMinutes())+":"+t(e.getUTCSeconds())+"."+((e.getUTCMilliseconds()/1e3).toFixed(3)+"").slice(2,5)+"Z"}(),iKey:e,name:"Microsoft.ApplicationInsights."+e.replace(/-/g,"")+"."+t,sampleRate:100,tags:n,data:{baseData:{ver:2}}}}var h=d.url||y.src;if(h){function a(e){var t,n,a,i,r,o,s,c,u,p,l;g=!0,m.queue=[],f||(f=!0,t=h,s=function(){var e={},t=d.connectionString;if(t)for(var n=t.split(";"),a=0;a<n.length;a++){var i=n[a].split("=");2===i.length&&(e[i[0][b]()]=i[1])}if(!e[C]){var r=e.endpointsuffix,o=r?e.location:null;e[C]="https://"+(o?o+".")+("ai."+(r||"monitor.azure.com"))}return e}()[C],c=s?s+"/v2/track":d.endpointUrl,(u=[]).push((n="SDK LOAD Failure: Failed to load Application Insights SDK script (See stack for details)",a=t,i=c,(o=(r=v(d.iKey||d.instrumentationKey||"","Exception")).data).baseType="ExceptionData",o.baseData.exceptions=[{typeName:"SDKLoadFailed",message:n.replace(/\./g,"-"),hasFullStack:!1,stack:n+"\nSnippet failed to load ["+(a||"Unknown")+"] from "+i}],r)),u.push(function(e,t,n,a){var i=v(d.iKey||d.instrumentationKey||"","Message");return i.data.baseType="MessageData",i.data.baseData.message='AI (Internal): 99 message:"'+("SDK LOAD Failure: Failed to load Application Insights SDK script (See stack for details) ("+n+")").replace(/"/g,'"')+"',i}(0,0,t)),function(e,t){if(JSON){var n=T.fetch;if(n&&!y.useXhr)n(t,{method:N,body:JSON.stringify(e),mode:"cors"});else if(XMLHttpRequest){var a=new XMLHttpRequest;a.open(N,t),a.setRequestHeader("Content-type","application/json"),a.send(JSON.stringify(e))}}}(u,c))}function i(e,t){f||setTimeout(function(){!t&&m.core||a()},500)}var e=function(){var n=l.createElement(k);n.src=h;var e=y[w];return!e&&""!==e||"undefined"==n[w]||(n[w]=e),n.onload=i,n.onerror=a,n.onreadystatechange=function(e,t){"loaded"!==n.readyState&&"complete"!==n.readyState||i(0,t)},n}();y.ld<0?l.head.appendChild(e):setTimeout(function(){l.head.appendChild(e)},y.ld||0)}try{m.cookie=l.cookie}catch(p){}function s(e){for(;e.length;)!function(t){m[t]=function(){var e=arguments;g||m.queue.push(function(){m[t].apply(m,e)})}}(e.pop())}var c="track",r="TrackPage",o="TrackEvent";s([c+"Event",c+"PageView",c+"Exception",c+"Trace",c+"DependencyData",c+"Metric",c+"PageViewPerformance","start"+r,"stop"+r,"start"+o,"stop"+o,"addTelemetryInitializer","setAuthenticatedUserContext","clearAuthenticatedUserContext","flush"]),m.SeverityLevel={Verbose:0,Information:1,Warning:2,Error:3,Critical:4};var u=(d.extensionConfig||{}).ApplicationInsightsAnalytics||{};if(!0!==d[I]&&!0!==u[I]){var p="onerror";s(["_"+p]);var l=T[p];T[p]=function(e,t,n,a,i){var r=l&&l(e,t,n,a,i);return!0!==r&&m["_"+p]({message:e,url:t,lineNumber:n,columnNumber:a,error:i}),r},d.autoExceptionInstrumented=!0}return m}(y.cfg);function a(){y.onInit&&y.onInit(n)}(T[t]=n).queue&&0===n.queue.length?(n.queue.push(a),n.trackPageView({})):a()}(window,document,{
+        src: "https://js.monitor.azure.com/scripts/b/ai.2.min.js", // The SDK URL Source
+        // name: "appInsights", // Global SDK Instance name defaults to "appInsights" when not supplied
+        // ld: 0, // Defines the load delay (in ms) before attempting to load the SDK. -1 = block page load and add to head. (default) = 0ms load delay.
+        // useXhr: 1, // Use XHR instead of fetch to report failures (if available).
+        crossOrigin: "anonymous", // When supplied this will add the provided value as the cross origin attribute on the script tag
+        // onInit: null, // Once the application insights instance has loaded and initialized this callback function will be called with 1 argument -- the sdk instance (DO NOT ADD anything to the sdk.queue -- As they won't get called)
+        cfg: { // Application Insights Configuration
+            connectionString: "@aiConnectionString",
+            enableAutoRouteTracking: true, // Automatically track route changes in SPAs
+            enableRequestHeaderTracking: true, // Enable tracking of request headers
+            enableResponseHeaderTracking: true, // Enable tracking of response headers
+            enableAjaxPerfTracking: true, // Enable AJAX performance tracking
+            enableUnhandledPromiseRejectionTracking: true, // Track unhandled promise rejections
+            disableFetchTracking: false, // Enable fetch API tracking
+            distributedTracingMode: 1, // W3C distributed tracing
+            enableCorsCorrelation: true, // Enable CORS correlation
+        }
+    });
+    </script>
+    }
+    else
+    {
+    <!-- Application Insights is not configured - using placeholder connection string -->
+    <script type="text/javascript">
+        console.log('Application Insights is not configured. Update appsettings.json with valid connection string to enable telemetry.');
+        // Initialize minimal window.appInsights object to prevent JavaScript errors
+        window.appInsights = {
+            trackEvent: function(name, properties) { console.log('AI Event (demo mode):', name, properties); },
+            trackPageView: function(properties) { console.log('AI Page View (demo mode):', properties); },
+            trackException: function(exception, properties) { console.log('AI Exception (demo mode):', exception, properties); },
+            trackTrace: function(message, properties) { console.log('AI Trace (demo mode):', message, properties); },
+            trackMetric: function(name, value, properties) { console.log('AI Metric (demo mode):', name, value, properties); }
+        };
+    </script>
+    }
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">appinsightsdemo</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - appinsightsdemo - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

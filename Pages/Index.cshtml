@@ -1,0 +1,316 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Application Insights Demo";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Application Insights Demo</h1>
+    
+    <div class="mt-4 mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Telemetry Generator</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="exceptionMessage" class="form-label">Custom Exception Message:</label>
+                            <input type="text" class="form-control" id="exceptionMessage" 
+                                   placeholder="Enter custom exception message..." 
+                                   value="This is a test exception for Application Insights demonstration.">
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-block">
+                            <button type="button" class="btn btn-danger" id="exceptionBtn" onclick="throwException()">
+                                <span class="spinner-border spinner-border-sm d-none" id="exceptionSpinner"></span>
+                                Throw Exception
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="logWarning()">Log Warning</button>
+                            <button type="button" class="btn btn-info" onclick="trackEvent()">Track Custom Event</button>
+                            <button type="button" class="btn btn-secondary" onclick="trackDependency()">Track Dependencies</button>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Exceptions thrown: <span id="exceptionCount" class="badge bg-danger">0</span>
+                                | Warnings logged: <span id="warningCount" class="badge bg-warning">0</span>
+                                | Events tracked: <span id="eventCount" class="badge bg-info">0</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <div id="statusMessage" class="alert alert-info d-none" role="alert"></div>
+    </div>
+    
+    <div class="mt-4">
+        <p class="lead">
+            This demonstration shows how Azure Application Insights automatically captures 
+            page views, requests, exceptions, and custom telemetry from your web application. 
+            Use the controls above to generate different types of telemetry data that will be 
+            logged and tracked in Application Insights.
+        </p>
+    </div>
+    
+    <div class="mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Recent Activity</h6>
+                <div id="activityLog" class="list-group" style="max-height: 200px; overflow-y: auto;">
+                    <div class="list-group-item text-muted">No activity yet...</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Telemetry Types</h6>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>🚨 Exceptions</span>
+                        <span class="badge bg-danger" id="exceptionBadge">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>⚠️ Warnings</span>
+                        <span class="badge bg-warning" id="warningBadge">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>📊 Custom Events</span>
+                        <span class="badge bg-info" id="eventBadge">0</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>👁️ Page Views</span>
+                        <span class="badge bg-success">Auto-tracked</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let exceptionCount = 0;
+    let warningCount = 0;
+    let eventCount = 0;
+
+    function updateCounters() {
+        document.getElementById('exceptionCount').textContent = exceptionCount;
+        document.getElementById('warningCount').textContent = warningCount;
+        document.getElementById('eventCount').textContent = eventCount;
+        document.getElementById('exceptionBadge').textContent = exceptionCount;
+        document.getElementById('warningBadge').textContent = warningCount;
+        document.getElementById('eventBadge').textContent = eventCount;
+    }
+
+    function showStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.className = `alert alert-${type}`;
+        statusDiv.textContent = message;
+        statusDiv.classList.remove('d-none');
+        
+        // Track status message display with Application Insights
+        if (window.appInsights) {
+            appInsights.trackEvent({
+                name: 'Status_Message_Displayed',
+                properties: {
+                    'message': message,
+                    'message_type': type,
+                    'page_url': window.location.href,
+                    'demo_context': 'ui_feedback'
+                }
+            });
+        }
+        
+        setTimeout(() => {
+            statusDiv.classList.add('d-none');
+        }, 3000);
+    }
+
+    function addToActivityLog(message, type = 'info') {
+        const logDiv = document.getElementById('activityLog');
+        const timestamp = new Date().toLocaleTimeString();
+        const typeIcons = {
+            'danger': '🚨',
+            'warning': '⚠️',
+            'info': '📊',
+            'success': '✅'
+        };
+        
+        if (logDiv.firstElementChild && logDiv.firstElementChild.textContent === 'No activity yet...') {
+            logDiv.innerHTML = '';
+        }
+        
+        const logItem = document.createElement('div');
+        logItem.className = `list-group-item list-group-item-${type}`;
+        logItem.innerHTML = `<small class="text-muted">${timestamp}</small><br>${typeIcons[type] || '📝'} ${message}`;
+        
+        logDiv.insertBefore(logItem, logDiv.firstChild);
+        
+        // Track activity log entry with Application Insights
+        if (window.appInsights) {
+            appInsights.trackEvent({
+                name: 'Activity_Log_Entry',
+                properties: {
+                    'activity_message': message,
+                    'activity_type': type,
+                    'timestamp': timestamp,
+                    'demo_context': 'activity_tracking'
+                }
+            });
+        }
+        
+        // Keep only last 5 items
+        while (logDiv.children.length > 5) {
+            logDiv.removeChild(logDiv.lastChild);
+        }
+    }
+
+    function setButtonLoading(buttonId, spinnerId, isLoading) {
+        const button = document.getElementById(buttonId);
+        const spinner = document.getElementById(spinnerId);
+        
+        if (isLoading) {
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+        } else {
+            button.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    }
+
+    function throwException() {
+        const customMessage = document.getElementById('exceptionMessage').value || 
+                            'This is a test exception for Application Insights demonstration.';
+        
+        // Track button click with client-side Application Insights
+        if (window.trackButtonClick) {
+            trackButtonClick('ThrowException', 'ExceptionGeneration');
+        }
+        
+        setButtonLoading('exceptionBtn', 'exceptionSpinner', true);
+        addToActivityLog('Throwing custom exception...', 'danger');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: `handler=ThrowException&message=${encodeURIComponent(customMessage)}`
+        })
+        .catch(error => {
+            setTimeout(() => {
+                setButtonLoading('exceptionBtn', 'exceptionSpinner', false);
+                exceptionCount++;
+                updateCounters();
+                showStatus('Exception thrown successfully! Check Application Insights for telemetry data.', 'success');
+                addToActivityLog(`Exception thrown: "${customMessage.substring(0, 50)}${customMessage.length > 50 ? '...' : ''}"`, 'danger');
+            }, 1000); // Simulate processing time
+        });
+    }
+
+    function logWarning() {
+        // Track button click with client-side Application Insights
+        if (window.trackButtonClick) {
+            trackButtonClick('LogWarning', 'WarningGeneration');
+        }
+        
+        addToActivityLog('Logging warning message...', 'warning');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: 'handler=LogWarning'
+        })
+        .then(response => response.json())
+        .then(data => {
+            warningCount++;
+            updateCounters();
+            showStatus(data.message, 'warning');
+            addToActivityLog('Warning message logged to Application Insights', 'warning');
+        })
+        .catch(error => {
+            console.error('Error logging warning:', error);
+            showStatus('Error logging warning', 'danger');
+        });
+    }
+
+    function trackEvent() {
+        // Track button click with client-side Application Insights
+        if (window.trackButtonClick) {
+            trackButtonClick('TrackEvent', 'CustomEventTracking');
+        }
+        
+        addToActivityLog('Tracking custom event...', 'info');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: 'handler=TrackEvent'
+        })
+        .then(response => response.json())
+        .then(data => {
+            eventCount++;
+            updateCounters();
+            showStatus(data.message, 'info');
+            addToActivityLog('Custom event "ButtonClick" tracked with properties', 'info');
+        })
+        .catch(error => {
+            console.error('Error tracking event:', error);
+            showStatus('Error tracking custom event', 'danger');
+        });
+    }
+
+    function trackDependency() {
+        // Track button click with client-side Application Insights
+        if (window.trackButtonClick) {
+            trackButtonClick('TrackDependency', 'DependencyTracking');
+        }
+        
+        addToActivityLog('Starting dependency tracking...', 'info');
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: 'handler=TrackDependency'
+        })
+        .then(response => response.json())
+        .then(data => {
+            showStatus(data.message, data.success ? 'success' : 'danger');
+            addToActivityLog(`Dependency tracking completed: ${data.message}`, data.success ? 'success' : 'danger');
+        })
+        .catch(error => {
+            console.error('Error in dependency tracking:', error);
+            showStatus('Error in dependency tracking', 'danger');
+        });
+    }
+
+    // Initialize counters
+    updateCounters();
+
+    // Track page interactions with Application Insights
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.appInsights) {
+            appInsights.trackEvent({
+                name: 'Demo_Page_Interactions_Ready',
+                properties: {
+                    'page_url': window.location.href,
+                    'demo_features': 'exception,warning,event,dependency',
+                    'client_side_tracking': 'enabled'
+                }
+            });
+        }
+    });
+</script>
